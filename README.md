@@ -9,6 +9,24 @@ Mac tip: If you run from a protected folder (e.g., Documents) and hit EPERM with
 Environment
 Create .env at repo root (used by the API):
 
+# --- DB ---
+DB_HOST=localhost
+DB_PORT=5433
+DB_USER=postgres
+DB_PASS=postgres
+DB_NAME=turbovets
+
+# --- API ---
+PORT=3000
+
+# --- JWT ---
+JWT_SECRET=super_dev_secret
+JWT_EXPIRES_IN=1800
+If you prefer Docker for Postgres:
+
+docker run --name turbovets-db -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_USER=postgres -e POSTGRES_DB=turbovets \
+  -p 5433:5432 -d postgres:14
 Install
 
 npm install
@@ -25,7 +43,6 @@ px ts-node \
   -r ./apps/api/src/register-paths.ts \
   -r reflect-metadata \
   ./apps/api/src/database/data-source.ts migration:run
-  
 Seed (creates orgs, users, and sample tasks)
 
 npx nx serve api
