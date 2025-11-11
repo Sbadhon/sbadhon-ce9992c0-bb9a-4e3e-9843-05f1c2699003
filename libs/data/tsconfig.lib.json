@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": false,
+    "composite": true,
+    "incremental": true,
+    "tsBuildInfoFile": "../../dist/.tsbuildinfo/libs-data.tsbuildinfo",
+    "rootDir": "src",
+    "outDir": "../../dist/libs/data",
+    "types": ["node"],
+    "module": "commonjs",
+    "target": "es2021"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts", "jest.config.ts"]
+}

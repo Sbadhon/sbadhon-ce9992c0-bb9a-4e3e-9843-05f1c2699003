@@ -1,0 +1,154 @@
+<div class="h-screen w-screen flex flex-col overflow-hidden">
+  <header
+    class="flex-shrink-0 bg-white dark:bg-gray-800 shadow-md p-4 flex items-center justify-between z-10"
+  >
+    <div class="flex items-center space-x-4">
+      <ng-icon name="heroCheckCircle" class="h-8 w-8 text-indigo-600"></ng-icon>
+      <h1 class="text-xl font-bold text-gray-800 dark:text-white">
+        Secure Task Management System
+      </h1>
+    </div>
+    <div class="flex items-center space-x-4">
+      <div>
+        <label for="category-filter" class="sr-only">Filter by category</label>
+        <select
+          id="category-filter"
+          #categorySelect
+          (change)="setFilterCategory(categorySelect.value)"
+          class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200"
+        >
+          <option value="All">All Categories</option>
+          <option *ngFor="let category of taskCategories" [value]="category">
+            {{ TaskCategoryLabel[category] }}
+          </option>
+        </select>
+      </div>
+
+      <button
+        *appHasRole="['ADMIN', 'OWNER']"
+        (click)="openNewTaskModal()"
+        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        aria-label="Create new task"
+      >
+        <ng-icon name="heroPlus" class="h-5 w-5 mr-2"></ng-icon>
+        New Task
+      </button>
+
+      <button
+        (click)="toggleChart()"
+        class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        aria-label="Toggle chart view"
+      >
+        <ng-icon
+          name="heroChartBar"
+          class="h-6 w-6 text-gray-500 dark:text-gray-400"
+        ></ng-icon>
+      </button>
+
+      <button
+        (click)="toggleAuditLog()"
+        class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        aria-label="View activity log"
+      >
+        <ng-icon
+          name="heroClock"
+          class="h-6 w-6 text-gray-500 dark:text-gray-400"
+        ></ng-icon>
+      </button>
+      <button
+        (click)="themeService.toggleTheme()"
+        class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        aria-label="Toggle theme"
+      >
+        <ng-container *ngIf="themeService.theme() === 'dark'; else lightTheme">
+          <ng-icon name="heroSun" class="h-6 w-6 text-yellow-400"></ng-icon>
+        </ng-container>
+        <ng-template #lightTheme>
+          <ng-icon name="heroMoon" class="h-6 w-6 text-gray-500"></ng-icon>
+        </ng-template>
+      </button>
+    </div>
+  </header>
+
+  @if (loading()) {
+  <div
+    class="flex-grow flex items-center justify-center bg-gray-100 dark:bg-gray-900"
+  >
+    <div class="flex flex-col items-center space-y-3">
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"
+      ></div>
+      <p class="text-gray-700 dark:text-gray-300 text-sm">Loading tasks...</p>
+    </div>
+  </div>
+  } @else if (error()) {
+  <div
+    class="flex-grow flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 text-center p-6"
+  >
+    <p class="text-gray-700 dark:text-gray-300 text-lg font-medium">
+      Something went wrong while loading tasks.
+    </p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+      {{ error() | json }}
+    </p>
+  </div>
+  } @else {
+
+  <main class="flex-grow p-4 overflow-x-auto bg-gray-100 dark:bg-gray-900">
+    @if (showChart()) {
+    <div class="mb-4 flex-shrink-0">
+      <app-task-chart [allTasks]="allTasks()"></app-task-chart>
+    </div>
+    }
+
+    <div
+      class="grid grid-cols-1 md:grid-cols-3 gap-6 h-full min-w-[1024px]"
+      cdkDropListGroup
+    >
+      @for (status of taskStatuses; track status) {
+      <div class="bg-gray-200 dark:bg-gray-800 rounded-lg flex flex-col h-full">
+        <h2
+          class="text-lg font-semibold p-4 text-gray-700 dark:text-gray-200 border-b border-gray-300 dark:border-gray-700"
+        >
+          {{ TaskStatusLabel[status] }}
+        </h2>
+
+        <div
+          cdkDropList
+          [id]="status"
+          [cdkDropListData]="getTasksForStatus(status)"
+          (cdkDropListDropped)="drop($event)"
+          class="p-4 space-y-4 flex-grow overflow-y-auto min-h-[200px]"
+        >
+          @for (task of getTasksForStatus(status); track task.id) {
+          <app-task-card
+            [task]="task"
+            (editTask)="onEditTask($event)"
+            (deleteTask)="onDeleteTask($event)"
+            cdkDrag
+          >
+          </app-task-card>
+          } @if (getTasksForStatus(status).length === 0) {
+          <div
+            class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400"
+          >
+            <p>Drop tasks here</p>
+          </div>
+          }
+        </div>
+      </div>
+      }
+    </div>
+  </main>
+  }
+  @if (isModalOpen()) {
+  <app-task-form
+    [task]="editingTask()"
+    (closed)="onModalClose()"
+    (saved)="onSaveTask($event)"
+  ></app-task-form>
+  }
+  @if (showAuditLog()) {
+    <app-audit-log (closed)="toggleAuditLog()"></app-audit-log>
+  }
+</div>

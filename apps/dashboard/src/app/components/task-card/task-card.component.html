@@ -1,0 +1,42 @@
+<div
+  class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-4 border-l-4 cursor-grab active:cursor-grabbing"
+>
+  <div class="flex justify-between items-start">
+    <h3 class="font-semibold text-gray-800 dark:text-white pr-2">
+      {{ task.title }}
+    </h3>
+    <div class="flex space-x-1 flex-shrink-0">
+      <button
+        *appHasRole="['ADMIN', 'OWNER']"
+        (click)="editTask.emit(task)"
+        class="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none"
+        aria-label="Edit task"
+      >
+        <ng-icon name="heroPencil" size="1rem"></ng-icon>
+      </button>
+      <button
+        *appHasRole="['ADMIN', 'OWNER']"
+        (click)="deleteTask.emit(task.id)"
+        class="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none"
+        aria-label="Delete task"
+      >
+        <ng-icon name="heroTrash" size="1rem"></ng-icon>
+      </button>
+    </div>
+  </div>
+
+  <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">
+    {{ task.description }}
+  </p>
+
+  <div class="mt-4 flex justify-between items-center">
+    <span
+      class="text-xs font-medium px-2 py-1 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200"
+    >
+      {{ task.category }}
+    </span>
+    <span class="text-xs text-gray-500 dark:text-gray-400"
+      >Due: {{ task.dueDate }}</span
+    >
+  </div>
+</div>
