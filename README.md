@@ -1,198 +1,104 @@
 
-Secure Task Management System (NX Monorepo)Role-based (RBAC) task board with organization scoping, JWT auth, and audit logging.
-1) Setup Instructions
-Prerequisites
-Node.js 20+
-PNPM or NPM
-PostgreSQL 14+ (or Docker)
-Mac tip: If you run from a protected folder (e.g., Documents) and hit EPERM with tsconfig-paths, move the project to a dev workspace path (e.g., ~/dev/…).
-Environment
-Create .env at repo root (used by the API):
+# Secure Task Management System (NX Monorepo)
 
-# --- DB ---
-DB_HOST=localhost
-DB_PORT=5433
-DB_USER=postgres
-DB_PASS=postgres
-DB_NAME=turbovets
+Role-based (RBAC) task board with organization scoping, JWT auth, and audit logging.  
 
-# --- API ---
-PORT=3000
+## 1. Quick Start – Run Everything Locally
+**A working .env is already included at the repo root* 
+Note: If you have Docker Desktop installed on your machine, everything should run smoothly without additional configuration.
 
-# --- JWT ---
-JWT_SECRET=super_dev_secret
-JWT_EXPIRES_IN=1800
-If you prefer Docker for Postgres:
-
-docker run --name turbovets-db -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_USER=postgres -e POSTGRES_DB=turbovets \
-  -p 5433:5432 -d postgres:14
-Install
-
+# Clone: 
+```bash
+git clone https://github.com/Sbadhon/sbadhon-ce9992c0-bb9a-4e3e-9843-05f1c2699003.git
+```
+From the **repo root**:
+```bash
 npm install
-Database: Run Migrations + Seed
-
-# Build once if needed (to get dist migrations)
-npx nx build data
-npx nx build auth
-
-# Run migrations automatically on app start
-# (app has TypeORM `migrationsRun: true`), or run CLI:
-npm run seed 
-px ts-node \
-  -r ./apps/api/src/register-paths.ts \
-  -r reflect-metadata \
-  ./apps/api/src/database/data-source.ts migration:run
-Seed (creates orgs, users, and sample tasks)
-
-npx nx serve api
-
-# or npm --workspace=apps/api run seed
-Start API & UI
-
-# API (NestJS)
-npx nx serve api
-# → http://localhost:3000/api
-
-# Dashboard (Angular)
-npx nx serve  dashboard
+npm run db:up
+npm run db:migrate
+npm run seed
+npm run api
+npm run dashboard
+```
 # → http://localhost:4200
-Test Logins
-Owner: owner@turbovets.com / Password123!
-Admin: admin@turbovets.com / Password123!
-Viewer: viewer@turbovets.com / Password123!
+## Logins:
+  - Owner: owner@turbovets.com / Password123!   
+  - Admin: admin@turbovets.com / Password123!
+  - Viewer: viewer@turbovets.com / Password123!
 The dashboard will store the JWT and automatically attach it via an HTTP interceptor.
 
-2) Architecture Overview
-NX Layout
+**OWNER: full access to org’s resources (read/write/delete).**
+**ADMIN: read/write tasks in org; no system-wide privileges.**
+**VIEWER: read-only tasks in org.**
 
-apps/
-  api/        # NestJS backend (Auth, Tasks, Audit)
-  dashboard/  # Angular frontend (Auth + Tasks board)
-libs/
-  data/       # Shared enums, DTOs, interfaces (TaskStatus, RoleEnum, DTOs)
-  auth/       # Reusable guards/decorators/ABAC (JwtAuthGuard, RolesGuard, OrgScope)
-Key Backend Modules
-AuthModule: JWT login, JwtAuthGuard, token validation.
-TasksModule: Task CRUD, service-level authorization, audit logging.
-AuditModule: AuditService (TASK_CREATE/UPDATE/DELETE) backed by TypeORM.
-TypeORM: Postgres entities (User, Organization, Task, AuditLog), migrations.
-Key Frontend Pieces
-NgRx auth slice for token, role, orgId (hydrated from localStorage).
-NgRx tasks slice for list/create/update/delete + effects.
-JwtInterceptor attaches Authorization: Bearer <token>.
-Task board with DnD and server-backed filtering; chart uses Chart.js.
-Tailwind + dark/light toggle.
+Note: If you cloned the repo inside Documents/Desktop/Downloads and using macOS, macOS may block Node from scanning folder and that will cause EPERM problem.
+Recommendation:
+```bash
+mkdir -p ~/dev
+cd ~/dev/<project-folder>
+```
 
-3) Data Model Explanation
-Entities
-Organization
-id, name, parentId (nullable) – allows 2-level hierarchy (Parent → Child).
-User
-id, email (unique), passwordHash, orgId, role (OWNER|ADMIN|VIEWER)
-Task
-id, orgId, createdByUserId, title, description?,status (TODO|IN_PROGRESS|DONE), category? (WORK|PERSONAL),dueDate?, order, createdAt, updatedAt
-AuditLog
-id, orgId, userId, action (TASK_*), resource, resourceId, meta, createdAt
-ERD (simplified)
-
-Organization (1) ────< (N) User
-      |                     |
-      |                     └────< (N) AuditLog
-      └────< (N) Task  ─────────^
-
-4) Access Control Implementation
-Roles & Capabilities
-OWNER: full access to org’s resources (read/write/delete).
-ADMIN: read/write tasks in org; no system-wide privileges.
-VIEWER: read-only tasks in org.
-Guards & ABAC
-@RequireRoles(...) + RolesGuard (ANY-OF semantics): handler requires any of the roles listed.
-OrgScopeGuardDefault: if request includes orgId (params/query/body), it must equal JWT orgId. Missing/blank is allowed and defaults to JWT org on server. Stops cross-org access.
-Service-layer ABAC (canReadTasks, canWriteTasks): final decision at the service, not just the controller.
-JWT Integration
-Login returns { accessToken, user, orgId, role }.
-Dashboard persists to localStorage (auth.v1); JwtInterceptor attaches the header to all requests.
-
-5) API Docs (Sample Requests)
-Base URL: http://localhost:3000/api/v1
-Auth
-POST /auth/login
-
-curl -s -X POST http://localhost:3000/api/v1/auth/login \
- -H "Content-Type: application/json" \
- -d '{"email":"owner@turbovets.com","password":"Password123!"}'
+Endpoints:
+POST http://localhost:3000/api/v1/auth/login
+body:
+```JSON
+{"email":"owner@turbovets.com","password":"Password123!"}
+```
 Response:
-
+```JSON
 {
-  "accessToken": "…",
-  "user": { "id": "…", "email": "owner@turbovets.com" },
-  "orgId": "…",
-  "role": "OWNER"
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMGFmMWJhOS02OWYwLTQ4YjktYjcwYy00NTFmZmViNzdjNDYiLCJlbWFpbCI6Im93bmVyQHR1cmJvdmV0cy5jb20iLCJvcmdJZCI6IjJkZDc4MjQ5LTBlYmUtNDc3YS1hMjI2LTZjN2YwNjE1NDA5OSIsInJvbGUiOiJPV05FUiIsImlhdCI6MTc2NDYzNzM4MywiZXhwIjoxNzY0NjM5MTgzfQ.m-if74JgapeubETfdlvlJGe-se9bpHeHfNQJV9V9oAE",
+    "user": {
+        "id": "b0af1ba9-69f0-48b9-b70c-451ffeb77c46",
+        "email": "owner@turbovets.com"
+    },
+    "orgId": "2dd78249-0ebe-477a-a226-6c7f06154099",
+    "role": "OWNER"
 }
-Tasks
-All endpoints require Authorization: Bearer <token>
-GET /tasks (optional status, category)
-If orgId missing/blank, server defaults to JWT org.
+```
+Use JWT token in all requests
+Auth Type : Bearer Token
 
-curl -s -H "Authorization: Bearer $TOKEN" \
-  "http://localhost:3000/api/v1/tasks?status=IN_PROGRESS"
-POST /tasks
+GET http://localhost:3000/api/v1/tasks
 
-curl -s -X POST http://localhost:3000/api/v1/tasks \
- -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
- -d '{"title":"Kickoff Deck","description":"Finalize slides","status":"TODO","category":"WORK","dueDate":"2025-12-31","order":0}'
-PATCH /tasks/:id
+POST http://localhost:3000/api/v1/tasks
+Body:
+```JSON
+{
+  "title":"Test Added",
+  "description":"testing",
+  "category":"WORK",
+  "dueDate":"2025-12-01"
+}
+```
 
-curl -s -X PATCH http://localhost:3000/api/v1/tasks/<taskId> \
- -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
- -d '{"status":"IN_PROGRESS","order":2}'
-DELETE /tasks/:id
+PUT http://localhost:3000/api/v1/tasks/aef96104-ecb5-4b80-97bc-888ab889a385
+Body:
+```JSON
+{
+  "title":"Test Edited",
+  "description":"test",
+  "category":"WORK",
+  "status":"TODO",
+  "dueDate":"2025-12-01"
+}
+```
+PATCH http://localhost:3000/api/v1/tasks/aef96104-ecb5-4b80-97bc-888ab889a385
+Body:
+```JSON
+{
+  "title":"Test Edited-Patch Test",
+}
+```
+DELETE 
+http://localhost:3000/api/v1/tasks/aef96104-ecb5-4b80-97bc-888ab889a385
 
-curl -s -X DELETE http://localhost:3000/api/v1/tasks/<taskId> \
- -H "Authorization: Bearer $TOKEN"
-Audit
-GET /audit-log (Owner/Admin only)
+Search by category: (WORK / PERSONAL)
+GET http://localhost:3000/api/v1/tasks?category=WORK
 
-curl -s -H "Authorization: Bearer $TOKEN" \
- http://localhost:3000/api/v1/audit-log
-
-6) Frontend Features
-Login UI: issues credentials, stores token, redirects to /tasks.
-Task Board:
-Column view: To Do, In Progress, Done
-Server-backed filter by category; no client-only filtering to keep RBAC consistent.
-Drag to reorder/move status → calls PATCH with partial DTO (status/order).
-Visualization: Chart.js bar chart shows counts per status.
-Theme Toggle: dark/light with Tailwind classes.
-State: NgRx for auth & tasks; effects coordinate API calls and errors.
-
-7) Testing Strategy -Future Considerations
-Backend (Jest)
-Auth: login success/failure; token verification guard.
-RBAC:
-GET /tasks allowed for Owner/Admin/Viewer (same org).
-POST/PATCH/DELETE /tasks allowed for Owner/Admin; 403 for Viewer.
-Org Guard: requests with foreign orgId → 403.
-Service ABAC: unit tests for canReadTasks / canWriteTasks.
-Frontend (Jest/Karma)
-Auth reducer/effects: login success/failure; hydration from storage.
-Tasks effects: load with and without filters; update on DnD.
-Components: Task board renders grouped columns; chart updates when tasks change.
-
-8) Future Considerations
-Security Hardening
-Refresh tokens + short-lived access tokens.
-CSRF defense for cookie-based sessions
-Rate limiting, IP throttling, login attempt lockouts.
-RBAC Extensions
-Delegation/impersonation, per-resource permissions, row-level policies.
-Caching authorization decisions with invalidation.
+Get Adit logs
+GET http://localhost:3000/api/v1/audit?userId=b0af1ba9-69f0-48b9-b70c-451ffeb77c46
 
 
-9) Rationale (Architecture & Design)
-Service-layer RBAC: Guards prevent obvious mistakes; the service remains the final arbiter (defense-in-depth).
-Org scoping: Guard plus server-side defaulting to JWT org eliminates FE trust issues.
-NX libs (data, auth): Shared enums/DTOs and guards reduce drift across apps.
-NgRx: Predictable data flow for auth and tasks; easy to persist/hydrate.
-Chart & DnD: Minimal deps, clear abstractions; non-blocking extras that demonstrate polish.
+Repeat for - Admin: admin@turbovets.com / Password123!
+- Viewer: viewer@turbovets.com / Password123!
