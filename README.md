@@ -3,11 +3,11 @@
 
 Role-based (RBAC) task board with organization scoping, JWT auth, and audit logging.  
 
-## 1. Quick Start – Run Everything Locally
+## Quick Start – Run Everything Locally
 **A working .env is already included at the repo root* 
 Note: If you have Docker Desktop installed on your machine, everything should run smoothly without additional configuration.
 
-# Clone: 
+## Clone: 
 ```bash
 git clone https://github.com/Sbadhon/sbadhon-ce9992c0-bb9a-4e3e-9843-05f1c2699003.git
 ```
@@ -20,7 +20,7 @@ npm run seed
 npm run api
 npm run dashboard
 ```
-# → http://localhost:4200
+## http://localhost:4200
 ## Logins:
   - Owner: owner@turbovets.com / Password123!   
   - Admin: admin@turbovets.com / Password123!
@@ -62,7 +62,7 @@ Auth Type : Bearer Token
 GET http://localhost:3000/api/v1/tasks
 
 POST http://localhost:3000/api/v1/tasks
-Body:
+ Body:
 ```JSON
 {
   "title":"Test Added",
@@ -73,7 +73,7 @@ Body:
 ```
 
 PUT http://localhost:3000/api/v1/tasks/aef96104-ecb5-4b80-97bc-888ab889a385
-Body:
+ Body:
 ```JSON
 {
   "title":"Test Edited",
@@ -84,7 +84,7 @@ Body:
 }
 ```
 PATCH http://localhost:3000/api/v1/tasks/aef96104-ecb5-4b80-97bc-888ab889a385
-Body:
+ Body:
 ```JSON
 {
   "title":"Test Edited-Patch Test",
